@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { analyzeWasteImage } from '../services/geminiService';
 import { WasteAnalysis } from '../types';
-import { UploadCloud, Image as ImageIcon, CheckCircle, AlertOctagon, XCircle, Loader2, Filter } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, CheckCircle, AlertOctagon, XCircle, Loader2, Filter, Check, BrainCircuit, FileText } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 const WasteScanner: React.FC = () => {
@@ -75,6 +75,56 @@ const WasteScanner: React.FC = () => {
         <h2 className="text-3xl font-bold text-slate-800">كاشف الهدر (مودا)</h2>
         <p className="text-slate-500 mt-2">ارفع صورة لمكان العمل، وسيقوم الذكاء الاصطناعي بتحديد الهدر وانتهاكات الـ 5S</p>
       </header>
+
+      {/* Progress Tracker */}
+      <div className="max-w-2xl mx-auto mb-8 px-4" dir="rtl">
+        <div className="relative flex items-center justify-between">
+          {/* Background Line */}
+          <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -translate-y-1/2 -z-10 rounded-full"></div>
+          
+          {/* Active Progress Line */}
+          <div 
+            className="absolute top-1/2 right-0 h-1 bg-teal-500 transition-all duration-700 ease-in-out -translate-y-1/2 -z-10 rounded-full"
+            style={{ width: result ? '100%' : (image || loading) ? '50%' : '0%' }}
+          ></div>
+
+          {/* Step 1: Upload */}
+          <div className="flex flex-col items-center gap-2 bg-slate-50 px-2">
+            <div className={`
+              w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 z-10
+              ${image ? 'bg-teal-500 border-teal-500 text-white' : 'bg-white border-teal-500 text-teal-600 shadow-md scale-110'}
+            `}>
+              {image ? <Check size={20} strokeWidth={3} /> : <UploadCloud size={20} />}
+            </div>
+            <span className={`text-xs font-bold ${image ? 'text-teal-700' : 'text-slate-800'}`}>رفع الصورة</span>
+          </div>
+
+          {/* Step 2: Analyze */}
+          <div className="flex flex-col items-center gap-2 bg-slate-50 px-2">
+            <div className={`
+              w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 z-10
+              ${result ? 'bg-teal-500 border-teal-500 text-white' : 
+                loading ? 'bg-white border-teal-500 text-teal-600 shadow-md scale-110' : 
+                image ? 'bg-white border-teal-500 text-teal-600' : 
+                'bg-slate-100 border-slate-200 text-slate-400'}
+            `}>
+              {loading ? <Loader2 size={20} className="animate-spin" /> : result ? <Check size={20} strokeWidth={3} /> : <BrainCircuit size={20} />}
+            </div>
+            <span className={`text-xs font-bold ${result || loading || image ? 'text-slate-800' : 'text-slate-400'}`}>التحليل</span>
+          </div>
+
+          {/* Step 3: Results */}
+          <div className="flex flex-col items-center gap-2 bg-slate-50 px-2">
+            <div className={`
+              w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 z-10
+              ${result ? 'bg-white border-teal-500 text-teal-600 shadow-md scale-110' : 'bg-slate-100 border-slate-200 text-slate-400'}
+            `}>
+              <FileText size={20} />
+            </div>
+            <span className={`text-xs font-bold ${result ? 'text-slate-800' : 'text-slate-400'}`}>النتائج</span>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Upload Section */}
