@@ -1,7 +1,5 @@
 {
   "name": "LeanMaster AI (مساعد اللين)",
   "description": "An intelligent assistant for Lean Managers to identify waste, generate Kaizen ideas, and perform root cause analysis using Gemini models. Designed with an Arabic-first interface.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }

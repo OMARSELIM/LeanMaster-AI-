@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { generateKaizenIdeas } from '../services/geminiService';
 import { KaizenSuggestion } from '../types';
-import { Sparkles, ArrowLeft, Loader2, Gauge, Target, Lightbulb } from 'lucide-react';
+import { Sparkles, Loader2, Target, Lightbulb } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import SmartTextarea from './SmartTextarea';
 
 const KaizenGenerator: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<KaizenSuggestion | null>(null);
+  const { addToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,15 +20,17 @@ const KaizenGenerator: React.FC = () => {
     try {
       const suggestion = await generateKaizenIdeas(input);
       setResult(suggestion);
+      addToast("تم توليد مقترح الكايزن بنجاح!", "success");
     } catch (error) {
-      alert("حدث خطأ أثناء الاتصال بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.");
+      console.error(error);
+      addToast("فشل في توليد الأفكار. يرجى التحقق من الاتصال والمحاولة مجدداً.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <header className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-slate-800 flex items-center justify-center gap-2">
           <Lightbulb className="text-yellow-500" size={32} />
@@ -40,10 +45,10 @@ const KaizenGenerator: React.FC = () => {
             <label htmlFor="problem" className="block text-sm font-semibold text-slate-700">
               وصف المشكلة / الفرصة
             </label>
-            <textarea
+            <SmartTextarea
               id="problem"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onValueChange={setInput}
               placeholder="مثال: هناك تأخير دائم في تسليم المواد الخام من المستودع إلى خط الإنتاج رقم 3 مما يسبب توقف العمال..."
               className="w-full h-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none"
             />
@@ -71,7 +76,7 @@ const KaizenGenerator: React.FC = () => {
         </form>
 
         {result && (
-          <div className="border-t border-slate-100 bg-slate-50/50 p-6 md:p-8 animation-slide-up">
+          <div className="border-t border-slate-100 bg-slate-50/50 p-6 md:p-8 animate-slide-in">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
                 <Target size={24} />

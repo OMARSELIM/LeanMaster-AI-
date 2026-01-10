@@ -1,13 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { analyzeWasteImage } from '../services/geminiService';
 import { WasteAnalysis } from '../types';
-import { UploadCloud, Image as ImageIcon, CheckCircle, AlertOctagon, XCircle, Loader2 } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, CheckCircle, AlertOctagon, XCircle, Loader2, Filter } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const WasteScanner: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WasteAnalysis | null>(null);
+  const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -17,6 +21,9 @@ const WasteScanner: React.FC = () => {
         const base64 = reader.result as string;
         setImage(base64);
         setResult(null); // Clear previous result
+        setFilterType('ALL');
+        setFilterSeverity('ALL');
+        addToast("تم تحميل الصورة بنجاح", "info");
       };
       reader.readAsDataURL(file);
     }
@@ -26,13 +33,18 @@ const WasteScanner: React.FC = () => {
     if (!image) return;
     
     setLoading(true);
+    setResult(null); // Clear previous result to show skeleton
     try {
       // Extract base64 data without prefix for API
       const base64Data = image.split(',')[1];
       const analysis = await analyzeWasteImage(base64Data);
       setResult(analysis);
+      setFilterType('ALL');
+      setFilterSeverity('ALL');
+      addToast("تم تحليل الصورة وتحديد الهدر بنجاح", "success");
     } catch (error) {
-      alert("حدث خطأ أثناء تحليل الصورة.");
+      console.error(error);
+      addToast("حدث خطأ أثناء تحليل الصورة. يرجى المحاولة مرة أخرى.", "error");
     } finally {
       setLoading(false);
     }
@@ -49,8 +61,16 @@ const WasteScanner: React.FC = () => {
     }
   };
 
+  const uniqueTypes = result ? Array.from(new Set(result.detectedWastes.map(w => w.type))) : [];
+
+  const filteredWastes = result?.detectedWastes.filter(waste => {
+    const typeMatch = filterType === 'ALL' || waste.type === filterType;
+    const severityMatch = filterSeverity === 'ALL' || waste.severity === filterSeverity;
+    return typeMatch && severityMatch;
+  }) || [];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
       <header className="text-center">
         <h2 className="text-3xl font-bold text-slate-800">كاشف الهدر (مودا)</h2>
         <p className="text-slate-500 mt-2">ارفع صورة لمكان العمل، وسيقوم الذكاء الاصطناعي بتحديد الهدر وانتهاكات الـ 5S</p>
@@ -109,7 +129,49 @@ const WasteScanner: React.FC = () => {
 
         {/* Right: Results Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-[400px]">
-          {!result ? (
+          {loading ? (
+            <div className="h-full space-y-6 animate-pulse">
+               {/* Skeleton Header */}
+               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                  <div className="h-6 w-32 bg-slate-200 rounded-lg"></div>
+                  <div className="flex gap-2 items-center">
+                    <div className="h-4 w-16 bg-slate-200 rounded"></div>
+                    <div className="h-8 w-16 bg-slate-200 rounded-lg"></div>
+                  </div>
+               </div>
+
+               {/* Skeleton Summary */}
+               <div className="p-4 rounded-xl border border-slate-100 space-y-3">
+                  <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
+                  <div className="h-3 w-full bg-slate-100 rounded"></div>
+                  <div className="h-3 w-full bg-slate-100 rounded"></div>
+                  <div className="h-3 w-3/4 bg-slate-100 rounded"></div>
+               </div>
+
+               {/* Skeleton Filter Bar */}
+               <div className="flex justify-between items-center">
+                  <div className="h-4 w-40 bg-slate-200 rounded"></div>
+                  <div className="h-8 w-48 bg-slate-100 rounded-lg"></div>
+               </div>
+
+               {/* Skeleton Cards */}
+               <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="border border-slate-100 p-4 rounded-xl space-y-3">
+                       <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                             <div className="w-5 h-5 bg-slate-200 rounded-full"></div>
+                             <div className="h-5 w-24 bg-slate-200 rounded"></div>
+                          </div>
+                          <div className="h-5 w-16 bg-slate-200 rounded"></div>
+                       </div>
+                       <div className="h-3 w-full bg-slate-100 rounded"></div>
+                       <div className="h-10 w-full bg-slate-50 rounded-lg"></div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+          ) : !result ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center p-8">
               <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                 <AlertOctagon size={40} className="opacity-20" />
@@ -117,7 +179,7 @@ const WasteScanner: React.FC = () => {
               <p>النتائج ستظهر هنا بعد التحليل</p>
             </div>
           ) : (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 animate-slide-in">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h3 className="font-bold text-xl text-slate-800">نتائج الفحص</h3>
                 <div className="flex items-center gap-2">
@@ -136,25 +198,61 @@ const WasteScanner: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <p className="font-bold text-slate-800">أنواع الهدر المكتشفة:</p>
-                {result.detectedWastes.map((waste, idx) => (
-                  <div key={idx} className="bg-white border border-slate-200 p-4 rounded-xl hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <XCircle size={18} className="text-red-500" />
-                        <h4 className="font-bold text-slate-800">{waste.type}</h4>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getSeverityColor(waste.severity)}`}>
-                        {waste.severity === 'High' ? 'خطير' : waste.severity === 'Medium' ? 'متوسط' : 'منخفض'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 mb-3">{waste.description}</p>
-                    <div className="flex items-start gap-2 bg-green-50 p-3 rounded-lg text-sm text-green-800">
-                      <CheckCircle size={16} className="mt-0.5 shrink-0" />
-                      <p>{waste.recommendation}</p>
-                    </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <p className="font-bold text-slate-800">أنواع الهدر المكتشفة:</p>
+                  
+                  {/* Filters */}
+                  <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                    <Filter size={14} className="text-slate-400 ml-1" />
+                    <select 
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="bg-transparent text-xs font-semibold text-slate-600 focus:outline-none cursor-pointer"
+                    >
+                        <option value="ALL">كل الأنواع</option>
+                        {uniqueTypes.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </select>
+                    <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                    <select 
+                        value={filterSeverity}
+                        onChange={(e) => setFilterSeverity(e.target.value)}
+                        className="bg-transparent text-xs font-semibold text-slate-600 focus:outline-none cursor-pointer"
+                    >
+                        <option value="ALL">كل المستويات</option>
+                        <option value="High">مرتفع</option>
+                        <option value="Medium">متوسط</option>
+                        <option value="Low">منخفض</option>
+                    </select>
                   </div>
-                ))}
+                </div>
+
+                {filteredWastes.length > 0 ? (
+                  filteredWastes.map((waste, idx) => (
+                    <div key={idx} className="bg-white border border-slate-200 p-4 rounded-xl hover:shadow-md transition-shadow animate-fade-in">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <XCircle size={18} className="text-red-500" />
+                          <h4 className="font-bold text-slate-800">{waste.type}</h4>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getSeverityColor(waste.severity)}`}>
+                          {waste.severity === 'High' ? 'خطير' : waste.severity === 'Medium' ? 'متوسط' : 'منخفض'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-3">{waste.description}</p>
+                      <div className="flex items-start gap-2 bg-green-50 p-3 rounded-lg text-sm text-green-800">
+                        <CheckCircle size={16} className="mt-0.5 shrink-0" />
+                        <p>{waste.recommendation}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <Filter size={24} className="mx-auto mb-2 opacity-50" />
+                    <p>لا توجد نتائج تطابق معايير التصفية</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

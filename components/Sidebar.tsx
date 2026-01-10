@@ -7,7 +7,12 @@ import {
   ChevronDown, 
   ChevronLeft,
   ScanEye,
-  BrainCircuit
+  BrainCircuit,
+  ClipboardList,
+  FileSpreadsheet,
+  ListChecks,
+  Fish,
+  RotateCw
 } from 'lucide-react';
 import { ToolType } from '../types';
 
@@ -33,6 +38,7 @@ type NavGroup = {
 const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, toggleSidebar }) => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     'analysis': true,
+    'action': true,
     'vision': true
   });
 
@@ -47,12 +53,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
       icon: LayoutDashboard 
     },
     {
-      title: 'أدوات التحليل',
+      title: 'تحليل المشكلات',
       key: 'analysis',
       items: [
-        { id: ToolType.KAIZEN, label: 'مُولّد الكايزن', icon: Lightbulb },
+        { id: ToolType.A3_SOLVER, label: 'محلل A3 الذكي', icon: FileSpreadsheet },
+        { id: ToolType.ISHIKAWA, label: 'مخطط إيشيكاوا', icon: Fish },
         { id: ToolType.FIVE_WHYS, label: 'تحليل 5 لماذا', icon: MessageSquareText },
       ]
+    },
+    {
+        title: 'العمليات الميدانية',
+        key: 'action',
+        items: [
+            { id: ToolType.KAIZEN, label: 'مُولّد الكايزن', icon: Lightbulb },
+            { id: ToolType.PDCA, label: 'دورة PDCA', icon: RotateCw },
+            { id: ToolType.GEMBA_WALK, label: 'مساعد الجيمبا', icon: ClipboardList },
+            { id: ToolType.EIGHT_WASTES, label: 'تدقيق الهدر (8)', icon: ListChecks },
+        ]
     },
     {
       title: 'الفحص البصري',
@@ -70,20 +87,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm transition-opacity duration-300"
           onClick={toggleSidebar}
         />
       )}
 
       <div className={`
-        fixed inset-y-0 right-0 z-30 w-72 bg-slate-900 text-slate-100 transform transition-transform duration-300 ease-in-out border-l border-slate-800
+        fixed inset-y-0 right-0 z-40 w-72 max-w-[85vw] bg-slate-900 text-slate-100 transform transition-transform duration-300 ease-in-out border-l border-slate-800
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         md:relative md:translate-x-0 md:flex flex-col shadow-2xl
       `}>
         {/* Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-900/50">
            <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-900/20">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-900/20 shrink-0">
               <BrainCircuit className="text-white" size={24} />
             </div>
             <div>
@@ -91,7 +108,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
               <p className="text-xs text-slate-500 font-medium">LeanMaster AI</p>
             </div>
           </div>
-          <button onClick={toggleSidebar} className="md:hidden text-slate-400 hover:text-white transition-colors">
+          <button 
+            onClick={toggleSidebar} 
+            className="md:hidden p-2 -mr-2 text-slate-400 hover:text-white transition-colors rounded-lg active:bg-slate-800"
+          >
             <X size={24} />
           </button>
         </div>
@@ -110,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
                         if (window.innerWidth < 768) toggleSidebar();
                     }}
                     className={`
-                        w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group
+                        w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group active:scale-[0.98] md:active:scale-100
                         ${isActive(item.id) 
                         ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' 
                         : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
@@ -131,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
               <div key={navGroup.key} className="mb-4">
                 <button
                   onClick={() => toggleGroup(navGroup.key)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-slate-300 transition-colors mb-2"
+                  className="w-full flex items-center justify-between px-4 py-3 md:py-2 text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-slate-300 transition-colors mb-2"
                 >
                   <span>{navGroup.title}</span>
                   {isOpenGroup ? <ChevronDown size={14} /> : <ChevronLeft size={14} className="rtl:rotate-180" />} 
@@ -146,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTool, onSelectTool, isOpen, tog
                         if (window.innerWidth < 768) toggleSidebar();
                       }}
                       className={`
-                        w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
+                        w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group active:scale-[0.98] md:active:scale-100
                         ${isActive(item.id) 
                           ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' 
                           : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
